@@ -5,6 +5,8 @@
 @{
     Layout = "../Shared/_NavLayout.cshtml";
     ViewData.SetActivePageAndTitle(WalletsNavPages.Payouts, "Manage payouts", Context.GetStoreData().StoreName);
+    var payoutHandler = PayoutHandlers.FirstOrDefault(handler => handler.CanHandle(Model.PaymentMethodId));
+    var actions = payoutHandler?.GetPayoutSpecificActions();
 }
 
 <script type="text/javascript">
@@ -55,7 +57,11 @@
                         stateActions.Add(("cancel", "Cancel selected payouts"));
                         break;
                 }
-                <div class="tab-pane @(index == 0 ? "active" : "") " id="@state.State" role="tabpanel">
+                @if (actions?.ContainsKey(state.State) is true)
+                {
+                    stateActions.AddRange(actions[state.State]);
+                }
+                <div class="tab-pane @(index ==0? "active": "") " id="@state.State" role="tabpanel">
                     <input type="hidden" asp-for="PayoutStateSets[index].State"/>
                     <input type="hidden" asp-for="PaymentMethodId"/>
 
@@ -125,6 +131,12 @@
                                                     @if (!(pp.TransactionLink is null))
                                                     {
                                                         <a class="transaction-link" href="@pp.TransactionLink">Link</a>
+                                                        if (state.State == PayoutState.AwaitingPayment)
+                                                        {
+                                                            <span
+                                                                data-toggle="tooltip"
+                                                                class="fa fa-info-circle" title="A payment to the payout address of the payout amount was detected. You can approve or reject this as the actual payout transaction."></span>
+                                                        }
                                                     }
                                                 </td>
                                             }
